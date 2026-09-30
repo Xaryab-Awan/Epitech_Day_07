@@ -1,12 +1,9 @@
 import random
 import time
-from tracemalloc import start
 from english_words import get_english_words_set
 time_limit=15
 number_of_penalties=12
-empty_word=[]
-word_length=-1
-char=""   
+
 def check(num):  
     if num<=0:
          print("You loooose!!")
@@ -14,7 +11,7 @@ def check(num):
     return False
 
 def get_word_length():
-      global word_length
+      word_length=-1
       while word_length < 1:
              try:
                  word_length = int(input("Enter the length of the word you want to guess: "))
@@ -22,7 +19,8 @@ def get_word_length():
                      print("Length must be 1 or greater.")
              except ValueError:
                  print("Please enter a valid integer.")
-                 word_length = -1     
+                 word_length = -1
+      return word_length
 
 def  rand():
     num=[1,2,3,4,5]
@@ -39,9 +37,11 @@ def randomword(word_length):
 
 
 def input_pattern(length):
+    empty_word=[]
     for i in range(length):
         empty_word.append('_')
     print()
+    return empty_word
 
 def check_char(char,word):
     return [i for i, c in enumerate(word) if c == char]
@@ -53,7 +53,6 @@ def check_full_word(ans,word):
           return False
 
 def get_char():
-    global char
     char=""
     while len(char) != 1 or not (65 <= ord(char) <= 90 or 97 <= ord(char) <= 122):
             try:
@@ -68,17 +67,22 @@ def get_char():
     char=char.lower()
     return char
 
-def main_func():
-    global number_of_penalties,word_length
+def hint(word, empty_word):
+    hidden = [word[i] for i in range(len(word)) if empty_word[i] == "_"]
+    letter = random.choice(hidden)
+    for i in check_char(letter, word):
+        empty_word[i] = letter
+    return letter
+
+def main_func(number_of_penalties):
     print("********************WELCOME TO HANGMAN!!!!!!********************")
     word=None
     while word is None:
-        get_word_length()
+        word_length=get_word_length()
         word=randomword(word_length)
         if word is None:
             print("No words of that length, try another.")
-            word_length=-1
-    input_pattern(word_length)
+    empty_word=input_pattern(word_length)
     print("Making a word...")
     guessed=[]
     while number_of_penalties>0:
@@ -86,7 +90,7 @@ def main_func():
              print(char,end=" ")
         print()
         print()
-        choice=input("1) Guess a character: \n2) Guess the full word\n> ").strip()
+        choice=input("1) Guess a character: \n2) Guess the full word\n For Hint Enter ? it costs 2 penalties\n>").strip()
         if choice == "1":
             start_time=time.time()
             char=get_char()
@@ -126,6 +130,17 @@ def main_func():
                   number_of_penalties-=5
                   print()
                   print("Wrong Guess Sorry")
+        elif choice=="?":
+             hidden_letters = {word[i] for i in range(len(word)) if empty_word[i] == "_"}
+             if len(hidden_letters) <= 1:
+                  print("You cant use hint right now")
+                  continue
+             if number_of_penalties - 2 <= 0:
+                  print("cant use hint because of penalties")
+                  continue
+             char=hint(word,empty_word)
+             number_of_penalties-=2
+             guessed.append(char)
         else:
              print("Enter a valid Choice!!")
              print()
@@ -139,4 +154,4 @@ def main_func():
     check(number_of_penalties)
     print("The word was: ",word)
         
-main_func()
+main_func(number_of_penalties)
