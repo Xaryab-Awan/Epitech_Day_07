@@ -3,6 +3,10 @@ import time
 from english_words import get_english_words_set
 time_limit=15
 number_of_penalties=12
+history={"words":[],
+         "won":[],
+         "penalties":[]}
+
 
 def check(num):  
     if num<=0:
@@ -73,9 +77,54 @@ def hint(word, empty_word):
     for i in check_char(letter, word):
         empty_word[i] = letter
     return letter
+def play_again(history):
+     i=""
+     while True:
+        i=input(("Do You want to play again?(yes or no): ")).strip().lower()
+        if i == "yes":
+            return True
+        elif i =="no":
+            if not history["won"]:
+                print("No games played yet.")
+            else:
+                winrate, avg_pens, longest_word = stats(history)
+                print(f"STATS OF GAMES PLAYED TILL NOW!!!")
+                print(f"Win rate: {winrate:.1f}%")
+                print(f"Average penalties in won games: {avg_pens:.1f}")
+                print(f"Longest word: {longest_word}")
+            return False
+        else:
+            print("Wrong Choice!!")
 
+def fill_history(word,result,penalties):
+     history["words"].append(word)
+     history["won"].append(result)
+     history["penalties"].append(penalties)
+
+def stats(history):   
+     total_games=len(history["won"])
+     if total_games == 0:
+        print("No games played yet.")
+        return 0, 0, 0, ""
+     wins=history["won"].count(True)
+     winrate=wins/total_games*100
+     pens=0
+     for i in range(total_games):
+          if history["won"][i]:
+            pens+=history["penalties"][i]
+     if wins:
+        avg_pens=pens/wins
+     else:
+        avg_pens=0
+     if history["words"]:
+        longest_word=max(history["words"],key=len)
+     return winrate,avg_pens,longest_word
+               
+               
+     
 def main_func(number_of_penalties):
     print("********************WELCOME TO HANGMAN!!!!!!********************")
+    used=0
     word=None
     while word is None:
         word_length=get_word_length()
@@ -97,6 +146,7 @@ def main_func(number_of_penalties):
             if time.time()-start_time > time_limit:
                         print("Too slow! Time's up.")
                         number_of_penalties-=1
+                        used+=1
                         continue
             if char in guessed:
                 print("You already guessed that!")
@@ -106,13 +156,16 @@ def main_func(number_of_penalties):
             if not indexes:  
                 print("Wrong Guess")
                 number_of_penalties-=1
+                used+=1
             else:
                 print("Correct Guess")
                 for i in indexes:
                      empty_word[i]=char
                 if "_" not in empty_word:
                     print("Congratulations!!,Well Done")
+                    result=True
                     print("Your Word was: ",word)
+                    fill_history(word,True,used)
                     return
         elif choice =="2":
              start_time=time.time()
@@ -120,14 +173,17 @@ def main_func(number_of_penalties):
              if time.time()-start_time > time_limit:
                 print("Too slow! Time's up.")
                 number_of_penalties-=5
+                used+=5
                 continue
              if(check_full_word(guessed_word,word)):
                   print()
                   print("Congratulations!!,Well Done")
                   print("Your Word was: ",word)
+                  fill_history(word,True,used)
                   return
              else:
                   number_of_penalties-=5
+                  used+=5
                   print()
                   print("Wrong Guess Sorry")
         elif choice=="?":
@@ -140,6 +196,7 @@ def main_func(number_of_penalties):
                   continue
              char=hint(word,empty_word)
              number_of_penalties-=2
+             used+=2
              guessed.append(char)
         else:
              print("Enter a valid Choice!!")
@@ -153,5 +210,9 @@ def main_func(number_of_penalties):
         print()
     check(number_of_penalties)
     print("The word was: ",word)
+    fill_history(word,False,used)
         
-main_func(number_of_penalties)
+while True:
+    main_func(number_of_penalties)
+    if not play_again(history):
+        break
